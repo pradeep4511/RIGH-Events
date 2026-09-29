@@ -166,6 +166,10 @@ function Footer() {
             +91 93460 80480
           </a>
 
+          <a href="tel:+918074764852">
+            +91 8074764852
+          </a>
+
           <a href="https://wa.me/919346080480">
             WhatsApp
           </a>
