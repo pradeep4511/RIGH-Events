@@ -1696,9 +1696,9 @@ function AdminLayout({ children }) {
             Packages
           </Link>
 
-          <Link>
+          <Link to="/admin/customers">
             <Users />
-            Customers
+                 Customers
           </Link>
 
           <Link>
@@ -3359,6 +3359,258 @@ function ThemeEditor({
   );
 }
 
+/* =========================================================
+   ADMIN CUSTOMERS
+========================================================= */
+
+function AdminCustomers() {
+
+  const [items, setItems] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+
+  async function loadCustomers() {
+
+    setLoading(true);
+    setError('');
+
+    try {
+
+      if (!supabaseConfigured) {
+        throw new Error(
+          'Supabase is not configured.'
+        );
+      }
+
+      const {
+        data,
+        error: fetchError
+      } = await supabase
+        .from('enquiries')
+        .select('*')
+        .order('created_at', {
+          ascending: false
+        });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      /*
+       * Build unique customers.
+       *
+       * Phone number is used as the main
+       * customer identifier.
+       */
+
+      const customerMap = new Map();
+
+      (data || []).forEach(item => {
+
+        const key =
+          item.phone ||
+          item.email ||
+          item.name;
+
+        if (!key) return;
+
+        if (!customerMap.has(key)) {
+
+          customerMap.set(
+            key,
+            {
+              id: key,
+              name: item.name,
+              phone: item.phone,
+              email: item.email,
+              enquiries: 0,
+              events: [],
+              lastEnquiry: item.created_at
+            }
+          );
+
+        }
+
+        const customer =
+          customerMap.get(key);
+
+        customer.enquiries += 1;
+
+        if (
+          item.event_id &&
+          !customer.events.includes(
+            item.event_id
+          )
+        ) {
+
+          customer.events.push(
+            item.event_id
+          );
+
+        }
+
+        if (
+          item.created_at >
+          customer.lastEnquiry
+        ) {
+
+          customer.lastEnquiry =
+            item.created_at;
+
+        }
+
+      });
+
+      setItems(
+        Array.from(
+          customerMap.values()
+        )
+      );
+
+    } catch (err) {
+
+      console.error(
+        'CUSTOMERS LOAD ERROR:',
+        err
+      );
+
+      setError(
+        err.message ||
+        'Could not load customers.'
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  }
+
+  React.useEffect(() => {
+    loadCustomers();
+  }, []);
+
+  return (
+
+    <AdminLayout>
+
+      <AdminTitle
+        title="Customers"
+        button={
+          <button
+            className="btn btn-primary"
+            onClick={loadCustomers}
+          >
+            Refresh
+          </button>
+        }
+      />
+
+      {loading && (
+        <div className="loading">
+          Loading customers...
+        </div>
+      )}
+
+      {error && (
+        <div className="error-box">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && (
+
+        <div className="panel table-panel">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Events</th>
+                <th>Enquiries</th>
+                <th>Last Enquiry</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {items.map(customer => (
+
+                <tr key={customer.id}>
+
+                  <td>
+
+                    <strong>
+                      {customer.name}
+                    </strong>
+
+                  </td>
+
+                  <td>
+                    {customer.phone || '—'}
+                  </td>
+
+                  <td>
+                    {customer.email || '—'}
+                  </td>
+
+                  <td>
+
+                    {customer.events.length
+                      ? customer.events.join(', ')
+                      : '—'}
+
+                  </td>
+
+                  <td>
+
+                    <strong>
+                      {customer.enquiries}
+                    </strong>
+
+                  </td>
+
+                  <td>
+
+                    {customer.lastEnquiry
+                      ? new Date(
+                          customer.lastEnquiry
+                        ).toLocaleString(
+                          'en-IN'
+                        )
+                      : '—'}
+
+                  </td>
+
+                </tr>
+
+              ))}
+
+            </tbody>
+
+          </table>
+
+          {!items.length && (
+            <Empty
+              text="No customers yet. Customers will appear after they submit an enquiry."
+            />
+          )}
+
+        </div>
+
+      )}
+
+    </AdminLayout>
+
+  );
+
+}
 
 /* =========================================================
    ADMIN ENQUIRIES
@@ -3366,132 +3618,343 @@ function ThemeEditor({
 
 function AdminEnquiries() {
 
-  const [items, setItems] =
-    React.useState(() =>
-      readLocal(
-        'righ_enquiries',
-        []
-      )
-    );
+  const [items, setItems] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
 
+  async function loadEnquiries() {
 
-  function remove(id) {
+    setLoading(true);
+    setError('');
 
-    setItems(current => {
+    try {
 
-      const next =
-        current.filter(
-          item =>
-            item.id !== id
+      if (!supabaseConfigured) {
+        throw new Error(
+          'Supabase is not configured.'
         );
+      }
 
-      writeLocal(
-        'righ_enquiries',
-        next
+      const {
+        data,
+        error: fetchError
+      } = await supabase
+        .from('enquiries')
+        .select('*')
+        .order('created_at', {
+          ascending: false
+        });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      setItems(data || []);
+
+    } catch (err) {
+
+      console.error(
+        'ENQUIRIES LOAD ERROR:',
+        err
       );
 
-      return next;
+      setError(
+        err.message ||
+        'Could not load enquiries.'
+      );
 
-    });
+    } finally {
+
+      setLoading(false);
+
+    }
 
   }
 
+  React.useEffect(() => {
+    loadEnquiries();
+  }, []);
+
+  async function updateStatus(id, status) {
+
+    try {
+
+      const {
+        error: updateError
+      } = await supabase
+        .from('enquiries')
+        .update({
+          status
+        })
+        .eq('id', id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setItems(prev =>
+        prev.map(item =>
+          item.id === id
+            ? {
+                ...item,
+                status
+              }
+            : item
+        )
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        err.message ||
+        'Could not update status.'
+      );
+
+    }
+
+  }
+
+  async function remove(id) {
+
+    if (
+      !confirm(
+        'Delete this enquiry permanently?'
+      )
+    ) {
+      return;
+    }
+
+    try {
+
+      const {
+        error: deleteError
+      } = await supabase
+        .from('enquiries')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setItems(prev =>
+        prev.filter(
+          item => item.id !== id
+        )
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        err.message ||
+        'Could not delete enquiry.'
+      );
+
+    }
+
+  }
 
   return (
+
     <AdminLayout>
 
       <AdminTitle
         title="Enquiries"
+        button={
+          <button
+            className="btn btn-primary"
+            onClick={loadEnquiries}
+          >
+            Refresh
+          </button>
+        }
       />
 
+      {loading && (
+        <div className="loading">
+          Loading enquiries...
+        </div>
+      )}
 
-      <div className="panel table-panel">
+      {error && (
+        <div className="error-box">
+          {error}
+        </div>
+      )}
 
-        <table>
+      {!loading && !error && (
 
-          <thead>
+        <div className="panel table-panel">
 
-            <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Event</th>
-              <th>Date</th>
-              <th>Location</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
+          <table>
 
-          </thead>
+            <thead>
 
-
-          <tbody>
-
-            {items.map(item => (
-
-              <tr key={item.id}>
-
-                <td>
-                  {item.name}
-                </td>
-
-                <td>
-                  {item.phone}
-                </td>
-
-                <td>
-                  {item.event}
-                </td>
-
-                <td>
-                  {item.date}
-                </td>
-
-                <td>
-                  {item.location}
-                </td>
-
-                <td>
-
-                  <span className="status new">
-                    {item.status}
-                  </span>
-
-                </td>
-
-                <td>
-
-                  <button
-                    className="icon-btn"
-                    onClick={() =>
-                      remove(item.id)
-                    }
-                  >
-                    <Trash2 size={15} />
-                  </button>
-
-                </td>
-
+              <tr>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Event</th>
+                <th>Theme</th>
+                <th>Date</th>
+                <th>Guests</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th></th>
               </tr>
 
-            ))}
+            </thead>
 
-          </tbody>
+            <tbody>
 
-        </table>
+              {items.map(item => (
 
+                <tr key={item.id}>
 
-        {!items.length && (
-          <Empty
-            text="No enquiries yet. Customer enquiries will appear here."
-          />
-        )}
+                  <td>
 
-      </div>
+                    <strong>
+                      {item.name}
+                    </strong>
+
+                    {item.message && (
+                      <small
+                        style={{
+                          display: 'block',
+                          marginTop: '5px'
+                        }}
+                      >
+                        {item.message}
+                      </small>
+                    )}
+
+                  </td>
+
+                  <td>
+
+                    <div>
+                      {item.phone}
+                    </div>
+
+                    {item.email && (
+                      <small>
+                        {item.email}
+                      </small>
+                    )}
+
+                  </td>
+
+                  <td>
+                    {item.event_id || '—'}
+                  </td>
+
+                  <td>
+                    {item.theme_id || '—'}
+                  </td>
+
+                  <td>
+                    {item.event_date || '—'}
+                  </td>
+
+                  <td>
+                    {item.guests || '—'}
+                  </td>
+
+                  <td>
+                    {item.location || '—'}
+                  </td>
+
+                  <td>
+
+                    <select
+                      value={
+                        item.status || 'New'
+                      }
+                      onChange={e =>
+                        updateStatus(
+                          item.id,
+                          e.target.value
+                        )
+                      }
+                    >
+
+                      <option value="New">
+                        New
+                      </option>
+
+                      <option value="Contacted">
+                        Contacted
+                      </option>
+
+                      <option value="Quote Sent">
+                        Quote Sent
+                      </option>
+
+                      <option value="Confirmed">
+                        Confirmed
+                      </option>
+
+                      <option value="Cancelled">
+                        Cancelled
+                      </option>
+
+                    </select>
+
+                  </td>
+
+                  <td>
+
+                    {item.created_at
+                      ? new Date(
+                          item.created_at
+                        ).toLocaleDateString(
+                          'en-IN'
+                        )
+                      : '—'}
+
+                  </td>
+
+                  <td>
+
+                    <button
+                      className="icon-btn"
+                      onClick={() =>
+                        remove(item.id)
+                      }
+                      title="Delete"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+
+                  </td>
+
+                </tr>
+
+              ))}
+
+            </tbody>
+
+          </table>
+
+          {!items.length && (
+            <Empty
+              text="No enquiries found."
+            />
+          )}
+
+        </div>
+
+      )}
 
     </AdminLayout>
-  );
-}
 
+  );
+
+}
 
 /* =========================================================
    EMPTY
@@ -3515,6 +3978,10 @@ export default function App() {
 
   return (
     <Routes>
+
+      {/* =========================
+          CUSTOMER WEBSITE
+      ========================= */}
 
       <Route
         path="/"
@@ -3551,10 +4018,20 @@ export default function App() {
         element={<Gallery />}
       />
 
+
+      {/* =========================
+          ADMIN LOGIN
+      ========================= */}
+
       <Route
         path="/admin/login"
         element={<AdminLogin />}
       />
+
+
+      {/* =========================
+          ADMIN DASHBOARD
+      ========================= */}
 
       <Route
         path="/admin"
@@ -3565,6 +4042,11 @@ export default function App() {
         }
       />
 
+
+      {/* =========================
+          ADMIN THEMES
+      ========================= */}
+
       <Route
         path="/admin/themes"
         element={
@@ -3573,6 +4055,25 @@ export default function App() {
           </ProtectedAdmin>
         }
       />
+
+
+      {/* =========================
+          ADMIN CUSTOMERS
+      ========================= */}
+
+      <Route
+        path="/admin/customers"
+        element={
+          <ProtectedAdmin>
+            <AdminCustomers />
+          </ProtectedAdmin>
+        }
+      />
+
+
+      {/* =========================
+          ADMIN ENQUIRIES
+      ========================= */}
 
       <Route
         path="/admin/enquiries"
