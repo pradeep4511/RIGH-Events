@@ -76,7 +76,7 @@ function Header({ admin = false }) {
   </span>
 
   <div>
-    Righ Events
+    RIGH Events
     <small>{admin ? 'Admin Panel' : 'WE CREATE - YOU CELEBRATE !! '}</small>
   </div>
 </Link>
@@ -139,7 +139,7 @@ function Footer() {
   </span>
 
   <div>
-    Righ Events
+    RIGH Events
     <small>WE CREATE - YOU CELEBRATE !!</small>
   </div>
 </div>
