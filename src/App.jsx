@@ -1222,49 +1222,112 @@ function ThemeDetails() {
    ENQUIRY
 ========================================================= */
 
-function Enquiry() {
+function Enquiry(){
+  const {events,themes}=useCatalog();
 
-  const {
-    events,
-    themes
-  } = useCatalog();
+  const params=new URLSearchParams(useLocation().search);
+  const initial=params.get('theme')||'';
 
-  const params =
-    new URLSearchParams(
-      useLocation().search
-    );
+  const [done,setDone]=React.useState(false);
+  const [saving,setSaving]=React.useState(false);
+  const [error,setError]=React.useState('');
 
-  const initial =
-    params.get('theme') || '';
+  const [form,setForm]=React.useState({
+    name:'',
+    phone:'',
+    email:'',
+    event:'',
+    theme:initial,
+    date:'',
+    guests:'',
+    location:'',
+    message:''
+  });
 
-
-  const [done, setDone] =
-    React.useState(false);
-
-
-  const [form, setForm] =
-    React.useState({
-      name: '',
-      phone: '',
-      email: '',
-      event: '',
-      theme: initial,
-      date: '',
-      guests: '',
-      location: '',
-      message: ''
-    });
-
-
-  const update = e =>
+  const update=e=>{
     setForm({
       ...form,
-      [e.target.name]:
-        e.target.value
+      [e.target.name]:e.target.value
     });
+  };
 
+  async function submitEnquiry(e){
+    e.preventDefault();
 
-  if (done) {
+    setSaving(true);
+    setError('');
+
+    try{
+
+      if(!supabaseConfigured){
+        throw new Error(
+          'Supabase is not configured. Please check your environment variables.'
+        );
+      }
+
+      const {error}=await supabase
+        .from('enquiries')
+        .insert({
+          name:form.name.trim(),
+          phone:form.phone.trim(),
+          email:form.email.trim() || null,
+          event_id:form.event || null,
+          theme_id:form.theme || null,
+          event_date:form.date || null,
+          guests:form.guests ? Number(form.guests) : null,
+          location:form.location.trim(),
+          message:form.message.trim() || null,
+          status:'New'
+        });
+
+      if(error) throw error;
+
+      /*
+       * Send email notification
+       */
+      const {error:emailError}=await supabase.functions.invoke(
+        'send-enquiry-email',
+        {
+          body:{
+            name:form.name,
+            phone:form.phone,
+            email:form.email,
+            event_id:form.event,
+            theme_id:form.theme,
+            date:form.date,
+            guests:form.guests,
+            location:form.location,
+            message:form.message
+          }
+        }
+      );
+
+      /*
+       * We don't block the customer confirmation if
+       * email delivery has a temporary problem.
+       */
+      if(emailError){
+        console.error('Email notification error:',emailError);
+      }
+
+      setDone(true);
+
+    }catch(err){
+
+      console.error(err);
+
+      setError(
+        err.message || 'Could not submit your enquiry. Please try again.'
+      );
+
+    }finally{
+
+      setSaving(false);
+
+    }
+  }
+
+  if(done){
 
     return (
       <main className="form-page">
@@ -1275,13 +1338,11 @@ function Enquiry() {
             ✓
           </div>
 
-          <h1>
-            Enquiry Received
-          </h1>
+          <h1>Enquiry Received</h1>
 
           <p>
-            Thank you. The Righ Events team
-            will contact you shortly.
+            Thank you. Your quotation request has been received.
+            The Righ Events team will contact you shortly.
           </p>
 
           <Link
@@ -1295,13 +1356,11 @@ function Enquiry() {
 
       </main>
     );
-
   }
-
 
   return (
     <>
-      <Header />
+      <Header/>
 
       <main className="form-page">
 
@@ -1316,38 +1375,10 @@ function Enquiry() {
           </h1>
 
           <p>
-            Tell us about your event and
-            preferred decoration.
+            Tell us about your event and preferred decoration.
           </p>
 
-
-          <form
-            onSubmit={e => {
-
-              e.preventDefault();
-
-              const arr =
-                readLocal(
-                  'righ_enquiries',
-                  []
-                );
-
-              writeLocal(
-                'righ_enquiries',
-                [
-                  {
-                    ...form,
-                    id: Date.now(),
-                    status: 'New'
-                  },
-                  ...arr
-                ]
-              );
-
-              setDone(true);
-
-            }}
-          >
+          <form onSubmit={submitEnquiry}>
 
             <label>
               Your Name *
@@ -1359,7 +1390,6 @@ function Enquiry() {
                 required
                 placeholder="Enter your name"
               />
-
             </label>
 
 
@@ -1371,9 +1401,9 @@ function Enquiry() {
                 value={form.phone}
                 onChange={update}
                 required
+                type="tel"
                 placeholder="Enter your phone number"
               />
-
             </label>
 
 
@@ -1387,7 +1417,6 @@ function Enquiry() {
                 type="email"
                 placeholder="Enter your email"
               />
-
             </label>
 
 
@@ -1407,15 +1436,13 @@ function Enquiry() {
                     Select event
                   </option>
 
-                  {events.map(event => (
-
+                  {events.map(e=>(
                     <option
-                      value={event.id}
-                      key={event.id}
+                      value={e.id}
+                      key={e.id}
                     >
-                      {event.name}
+                      {e.name}
                     </option>
-
                   ))}
 
                 </select>
@@ -1438,21 +1465,17 @@ function Enquiry() {
 
                   {themes
                     .filter(
-                      theme =>
-                        !form.event ||
-                        theme.event_id ===
-                          form.event
+                      t=>!form.event || t.event_id===form.event
                     )
-                    .map(theme => (
-
+                    .map(t=>(
                       <option
-                        value={theme.id}
-                        key={theme.id}
+                        value={t.id}
+                        key={t.id}
                       >
-                        {theme.name}
+                        {t.name}
                       </option>
-
-                    ))}
+                    ))
+                  }
 
                 </select>
 
@@ -1473,7 +1496,6 @@ function Enquiry() {
                   type="date"
                   required
                 />
-
               </label>
 
 
@@ -1485,9 +1507,9 @@ function Enquiry() {
                   value={form.guests}
                   onChange={update}
                   type="number"
+                  min="1"
                   placeholder="Number of guests"
                 />
-
               </label>
 
             </div>
@@ -1503,7 +1525,6 @@ function Enquiry() {
                 required
                 placeholder="Enter event location"
               />
-
             </label>
 
 
@@ -1517,16 +1538,29 @@ function Enquiry() {
                 rows="4"
                 placeholder="Tell us about your requirements..."
               />
-
             </label>
+
+
+            {error && (
+              <div className="error-box">
+                {error}
+              </div>
+            )}
 
 
             <button
               className="btn btn-primary submit"
               type="submit"
+              disabled={saving}
             >
-              Send Enquiry
-              <ArrowRight size={17} />
+
+              {saving
+                ? 'Sending...'
+                : 'Send Enquiry'
+              }
+
+              {!saving && <ArrowRight size={17}/>}
+
             </button>
 
           </form>
@@ -1537,7 +1571,6 @@ function Enquiry() {
     </>
   );
 }
-
 
 /* =========================================================
    GALLERY
