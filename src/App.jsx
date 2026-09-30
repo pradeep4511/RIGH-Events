@@ -840,6 +840,115 @@ function Themes() {
 /* =========================================================
    EVENT THEMES
 ========================================================= */
+/* =========================================================
+   EVENT THEMES
+========================================================= */
+
+function EventThemes(){
+
+  const { id } = useParams();
+
+  const {
+    events,
+    themes,
+    loading
+  } = useCatalog();
+
+  if(loading){
+
+    return (
+      <>
+        <Header />
+
+        <main className="container">
+          <div className="loading">
+            Loading themes...
+          </div>
+        </main>
+
+        <Footer />
+      </>
+    );
+
+  }
+
+  const event = events.find(
+    e => String(e.id) === String(id)
+  );
+
+  if(!event){
+
+    return (
+      <Navigate
+        to="/events"
+        replace
+      />
+    );
+
+  }
+
+  const eventThemes = themes.filter(
+    theme =>
+      String(theme.event_id) ===
+      String(event.id)
+  );
+
+  return (
+    <>
+      <Header />
+
+      <div className="page-head">
+
+        <div className="container">
+
+          <p className="eyebrow">
+            {event.icon} RIGH EVENTS
+          </p>
+
+          <h1>
+            {event.name} Themes
+          </h1>
+
+          <p>
+            Choose a decoration theme for your{' '}
+            {event.name.toLowerCase()} celebration.
+          </p>
+
+        </div>
+
+      </div>
+
+      <main className="section container">
+
+        <div className="theme-grid">
+
+          {eventThemes.map(theme => (
+
+            <ThemeCard
+              key={theme.id}
+              t={theme}
+              events={events}
+            />
+
+          ))}
+
+        </div>
+
+        {!eventThemes.length && (
+
+          <Empty
+            text="No themes available for this event yet."
+          />
+
+        )}
+
+      </main>
+
+      <Footer />
+
+    </>
+  );
+}
 function ThemeDetails(){
 
   const {id} = useParams();
