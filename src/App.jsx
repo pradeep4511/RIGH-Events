@@ -74,7 +74,9 @@ function Header({ admin = false }) {
           to={admin ? '/admin' : '/'}
           className="brand"
         >
-          <span>✿</span>
+          <span className="logo">
+          <img src="https://cdn.phototourl.com/member/2026-09-30-1be61a56-3c2a-435f-9487-b369f39726ce.jpg" alt="Righ Events" />
+          </span>
 
           <div>
             Righ Events
@@ -402,13 +404,13 @@ function Home() {
           <div className="container hero-content">
 
             <p className="eyebrow">
-              RIGH EVENTS • EVENT DECORATION
+              RIGH EVENTS • EVENTS & DECORATIONS
             </p>
 
             <h1>
-              Make Your
+              WE CREATE 
               <br />
-              <em>Moments Beautiful</em>
+              <em>YOU CELEBRATE !!</em>
             </h1>
 
             <p>
