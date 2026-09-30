@@ -2267,399 +2267,401 @@ function AdminThemes() {
 
   async function saveTheme(theme) {
 
-    try {
+  try {
 
-      let item = {
-        ...theme,
-        price: Number(theme.price),
-        image_url:
-          theme.image_url || ''
-      };
+    let item = {
+      ...theme,
+      price: Number(theme.price),
+      image_url: theme.image_url || ''
+    };
 
 
-      /* =====================================================
-         SUPABASE
-      ===================================================== */
+    /* =====================================================
+       SUPABASE
+    ===================================================== */
 
-      if (supabaseConfigured) {
+    if (supabaseConfigured) {
 
-        /*
-          Generate ID for a NEW theme.
-        */
+      /* Generate ID for new theme */
+      item.id =
+        item.id ||
+        crypto.randomUUID();
 
-        item.id =
-          item.id ||
-          crypto.randomUUID();
 
+      /* ===================================================
+         1. CREATE / UPDATE THEME
+      =================================================== */
 
-        /* -----------------------------------------------
-           1. CREATE / UPDATE THEME
-        ----------------------------------------------- */
+      const {
+        error: themeError
+      } =
+        await supabase
+          .from('themes')
+          .upsert(
+            {
+              id: item.id,
 
-        const {
-          error: themeError
-        } =
-          await supabase
-            .from('themes')
-            .upsert(
-              {
-                id: item.id,
+              event_id:
+                item.event_id,
 
-                event_id:
-                  item.event_id,
+              name:
+                item.name,
 
-                name:
-                  item.name,
+              description:
+                item.description || '',
 
-                description:
-                  item.description || '',
+              price:
+                item.price,
 
-                price:
-                  item.price,
+              tag:
+                item.tag || '',
 
-                tag:
-                  item.tag || '',
-
-                includes:
-                  item.includes || [],
-
-                image_url:
-                  item.image_url || '',
-
-                active: true
-              },
-              {
-                onConflict: 'id'
-              }
-            );
-
-
-        if (themeError) {
-          throw new Error(
-            `Theme save failed: ${themeError.message}`
-          );
-        }
-
-
-        /* -----------------------------------------------
-           2. UPLOAD IMAGES
-        ----------------------------------------------- */
-
-        const uploadedImages = [];
-
-
-        for (
-          let i = 0;
-          i < (theme.pendingFiles || []).length;
-          i++
-        ) {
-
-          const file =
-            theme.pendingFiles[i].file;
-
-
-          const safeName =
-            file.name.replace(
-              /[^a-zA-Z0-9._-]/g,
-              '_'
-            );
-
-
-          const path =
-            `${item.id}/${Date.now()}-${i}-${safeName}`;
-
-
-          console.log(
-            'Uploading image:',
-            path
-          );
-
-
-          const {
-            error: uploadError
-          } =
-            await supabase
-              .storage
-              .from('theme-images')
-              .upload(
-                path,
-                file
-              );
-
-
-          if (uploadError) {
-
-            throw new Error(
-              `Image upload failed: ${uploadError.message}`
-            );
-
-          }
-
-
-          /* ---------------------------------------------
-             3. GET PUBLIC URL
-          --------------------------------------------- */
-
-          const {
-            data: publicData
-          } =
-            supabase
-              .storage
-              .from('theme-images')
-              .getPublicUrl(path);
-
-
-          const imageUrl =
-            publicData?.publicUrl;
-
-
-          if (!imageUrl) {
-
-            throw new Error(
-              'Could not create public image URL.'
-            );
-
-          }
-
-
-          uploadedImages.push(
-            imageUrl
-          );
-
-
-          console.log(
-            'Image URL:',
-            imageUrl
-          );
-
-
-          /* ---------------------------------------------
-             4. INSERT theme_images RECORD
-          --------------------------------------------- */
-
-          const {
-            error: imageError
-          } =
-            await supabase
-              .from('theme_images')
-              .insert({
-                theme_id:
-                  item.id,
-
-                url:
-                  imageUrl,
-
-                sort_order:
-                  i
-              });
-
-
-          if (imageError) {
-
-            throw new Error(
-              `Image database save failed: ${imageError.message}`
-            );
-
-          }
-
-        }
-
-
-        /* -----------------------------------------------
-           5. SET FIRST IMAGE AS MAIN IMAGE
-        ----------------------------------------------- */
-
-        if (
-          !item.image_url &&
-          uploadedImages.length > 0
-        ) {
-
-          item.image_url =
-            uploadedImages[0];
-
-
-          const {
-            error: imageUpdateError
-          } =
-            await supabase
-              .from('themes')
-              .update({
-                image_url:
-                  item.image_url
-              })
-              .eq(
-                'id',
-                item.id
-              );
-
-
-          if (imageUpdateError) {
-
-            throw new Error(
-              `Main image update failed: ${imageUpdateError.message}`
-            );
-
-          }
-
-        }
-
-
-        /* -----------------------------------------------
-           6. RELOAD THEMES
-        ----------------------------------------------- */
-
-        const {
-          data: rows,
-          error: fetchError
-        } =
-          await supabase
-            .from('themes')
-            .select(`
-              *,
-              theme_images (
-                url,
-                sort_order
-              )
-            `)
-            .eq('active', true)
-            .order(
-              'created_at',
-              {
-                ascending: false
-              }
-            );
-
-
-        if (fetchError) {
-
-          throw new Error(
-            `Theme reload failed: ${fetchError.message}`
-          );
-
-        }
-
-
-        const formattedRows =
-          (rows || []).map(themeRow => {
-
-            const sortedImages =
-              (themeRow.theme_images || [])
-                .slice()
-                .sort(
-                  (a, b) =>
-                    (a.sort_order || 0) -
-                    (b.sort_order || 0)
-                )
-                .map(
-                  image => image.url
-                );
-
-
-            return {
-              ...themeRow,
+              includes:
+                item.includes || [],
 
               image_url:
-                themeRow.image_url ||
-                sortedImages[0] ||
-                '',
+                item.image_url || '',
 
-              images:
-                sortedImages
-            };
+              active: true
+            },
+            {
+              onConflict: 'id'
+            }
+          );
 
-          });
 
+      if (themeError) {
 
-        setThemes(
-          formattedRows
+        throw new Error(
+          `Theme save failed: ${themeError.message}`
         );
 
       }
 
 
-      /* =====================================================
-         LOCAL MODE
-      ===================================================== */
+      /* ===================================================
+         2. UPLOAD ALL NEW IMAGES
+      =================================================== */
 
-      else {
+      const uploadedImages = [];
 
-        const previews =
-          (theme.pendingFiles || [])
-            .map(
-              file =>
-                file.preview
+
+      for (
+        let i = 0;
+        i < (theme.pendingFiles || []).length;
+        i++
+      ) {
+
+        const file =
+          theme.pendingFiles[i].file;
+
+
+        const safeName =
+          file.name.replace(
+            /[^a-zA-Z0-9._-]/g,
+            '_'
+          );
+
+
+        const path =
+          `${item.id}/${Date.now()}-${i}-${safeName}`;
+
+
+        console.log(
+          'Uploading image:',
+          path
+        );
+
+
+        /* Upload image to Storage */
+
+        const {
+          error: uploadError
+        } =
+          await supabase
+            .storage
+            .from('theme-images')
+            .upload(
+              path,
+              file
             );
 
 
-        item.images = [
-          ...(item.images || []),
-          ...previews
-        ];
+        if (uploadError) {
 
-
-        if (!item.image_url) {
-
-          item.image_url =
-            previews[0] || '';
+          throw new Error(
+            `Image upload failed: ${uploadError.message}`
+          );
 
         }
 
 
-        setThemes(prev => {
+        /* =================================================
+           3. GET PUBLIC URL
+        ================================================= */
 
-          if (theme.id) {
-
-            return prev.map(
-              existing =>
-                existing.id === theme.id
-                  ? item
-                  : existing
-            );
-
-          }
+        const {
+          data: publicData
+        } =
+          supabase
+            .storage
+            .from('theme-images')
+            .getPublicUrl(path);
 
 
-          return [
-            item,
-            ...prev
-          ];
+        const imageUrl =
+          publicData?.publicUrl;
 
-        });
+
+        if (!imageUrl) {
+
+          throw new Error(
+            'Could not create public image URL.'
+          );
+
+        }
+
+
+        uploadedImages.push(
+          imageUrl
+        );
+
+
+        /* =================================================
+           4. SAVE IMAGE IN theme_images
+        ================================================= */
+
+        const {
+          error: imageError
+        } =
+          await supabase
+            .from('theme_images')
+            .insert({
+              theme_id:
+                item.id,
+
+              url:
+                imageUrl,
+
+              sort_order:
+                i
+            });
+
+
+        if (imageError) {
+
+          throw new Error(
+            `Image database save failed: ${imageError.message}`
+          );
+
+        }
 
       }
 
 
-      /* -----------------------------------------------
-         CLOSE EDITOR
-      ----------------------------------------------- */
+      /* ===================================================
+         5. SET FIRST IMAGE AS MAIN IMAGE
+      =================================================== */
 
-      setEditing(null);
+      if (
+        !item.image_url &&
+        uploadedImages.length > 0
+      ) {
 
-
-      alert(
-        theme.id
-          ? 'Theme updated successfully!'
-          : 'Theme added successfully!'
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        'SAVE THEME ERROR:',
-        error
-      );
+        item.image_url =
+          uploadedImages[0];
 
 
-      alert(
-        error?.message ||
-        'Could not save theme.'
+        const {
+          error: imageUpdateError
+        } =
+          await supabase
+            .from('themes')
+            .update({
+              image_url:
+                item.image_url
+            })
+            .eq(
+              'id',
+              item.id
+            );
+
+
+        if (imageUpdateError) {
+
+          throw new Error(
+            `Main image update failed: ${imageUpdateError.message}`
+          );
+
+        }
+
+      }
+
+
+      /* ===================================================
+         6. RELOAD ALL THEMES + ALL IMAGES
+      =================================================== */
+
+      const {
+        data: rows,
+        error: fetchError
+      } =
+        await supabase
+          .from('themes')
+          .select(`
+            *,
+            theme_images (
+              url,
+              sort_order
+            )
+          `)
+          .eq(
+            'active',
+            true
+          )
+          .order(
+            'created_at',
+            {
+              ascending: false
+            }
+          );
+
+
+      if (fetchError) {
+
+        throw new Error(
+          `Theme reload failed: ${fetchError.message}`
+        );
+
+      }
+
+
+      /* ===================================================
+         7. FORMAT ALL IMAGES
+      =================================================== */
+
+      const formattedRows =
+        (rows || []).map(themeRow => {
+
+          const sortedImages =
+            (themeRow.theme_images || [])
+              .slice()
+              .sort(
+                (a, b) =>
+                  (a.sort_order || 0) -
+                  (b.sort_order || 0)
+              )
+              .map(
+                image => image.url
+              );
+
+
+          return {
+            ...themeRow,
+
+            /* First image = main image */
+            image_url:
+              themeRow.image_url ||
+              sortedImages[0] ||
+              '',
+
+            /* All images */
+            images:
+              sortedImages
+          };
+
+        });
+
+
+      setThemes(
+        formattedRows
       );
 
     }
 
+
+    /* =====================================================
+       LOCAL MODE
+    ===================================================== */
+
+    else {
+
+      const previews =
+        (theme.pendingFiles || [])
+          .map(
+            file =>
+              file.preview
+          );
+
+
+      item.images = [
+        ...(item.images || []),
+        ...previews
+      ];
+
+
+      if (!item.image_url) {
+
+        item.image_url =
+          previews[0] || '';
+
+      }
+
+
+      setThemes(prev => {
+
+        if (theme.id) {
+
+          return prev.map(
+            existing =>
+              existing.id === theme.id
+                ? item
+                : existing
+          );
+
+        }
+
+
+        return [
+          item,
+          ...prev
+        ];
+
+      });
+
+    }
+
+
+    /* =====================================================
+       CLOSE EDITOR
+    ===================================================== */
+
+    setEditing(null);
+
+
+    alert(
+      theme.id
+        ? 'Theme updated successfully!'
+        : 'Theme added successfully!'
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'SAVE THEME ERROR:',
+      error
+    );
+
+
+    alert(
+      error?.message ||
+      'Could not save theme.'
+    );
+
   }
 
+}
 
   /* =======================================================
      DELETE THEME
@@ -2938,63 +2940,54 @@ function ThemeEditor({
   onClose
 }) {
 
-  const [form, setForm] =
-    React.useState({
-      ...initial,
-      includes:
-        initial.includes || [],
-      images:
-        initial.images || [],
-      pendingFiles:
-        initial.pendingFiles || []
-    });
+  const [form, setForm] = React.useState({
+    ...initial,
+    includes: Array.isArray(initial.includes)
+      ? initial.includes
+      : [],
+    images: Array.isArray(initial.images)
+      ? initial.images
+      : [],
+    pendingFiles: initial.pendingFiles || []
+  });
 
+  const [previews, setPreviews] = React.useState([]);
 
-  const [previews, setPreviews] =
-    React.useState([]);
-
-
-  const update = (
-    key,
-    value
-  ) => {
-
+  const update = (key, value) => {
     setForm(prev => ({
       ...prev,
       [key]: value
     }));
-
   };
 
 
-  /* =======================================================
-     ADD IMAGES
-  ======================================================= */
+  /* =====================================================
+     ADD MULTIPLE IMAGES
+  ===================================================== */
 
-  const addFiles = e => {
+  const addFiles = (e) => {
 
-    const files =
-      [...e.target.files];
+    const files = Array.from(e.target.files || []);
 
+    if (!files.length) return;
 
     files.forEach(file => {
 
-      const reader =
-        new FileReader();
+      if (!file.type.startsWith('image/')) {
+        return;
+      }
 
+      const reader = new FileReader();
 
       reader.onload = () => {
 
-        const preview =
-          reader.result;
-
+        const preview = reader.result;
 
         setForm(prev => ({
           ...prev,
 
           pendingFiles: [
             ...(prev.pendingFiles || []),
-
             {
               name: file.name,
               file,
@@ -3003,7 +2996,6 @@ function ThemeEditor({
           ]
         }));
 
-
         setPreviews(prev => [
           ...prev,
           preview
@@ -3011,22 +3003,21 @@ function ThemeEditor({
 
       };
 
-
       reader.readAsDataURL(file);
 
     });
 
-
-    /*
-      Allows selecting the same file again.
-    */
-
+    /* Allow selecting same files again */
     e.target.value = '';
 
   };
 
 
-  const existing = [
+  /* =====================================================
+     EXISTING IMAGES
+  ===================================================== */
+
+  const existingImages = [
     form.image_url,
     ...(form.images || [])
   ]
@@ -3037,16 +3028,45 @@ function ThemeEditor({
     );
 
 
+  /* =====================================================
+     ALL IMAGES
+  ===================================================== */
+
   const allPhotos = [
-    ...existing,
+    ...existingImages,
     ...previews
   ];
 
 
+  /* =====================================================
+     INCLUDED ITEMS
+  ===================================================== */
+
+  const includedText =
+    (form.includes || []).join(', ');
+
+
+  const updateIncludedItems = (value) => {
+
+    const items = value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+    update('includes', items);
+
+  };
+
+
   return (
+
     <div className="modal-backdrop">
 
       <div className="theme-editor">
+
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <div className="editor-head">
 
@@ -3064,7 +3084,6 @@ function ThemeEditor({
 
           </div>
 
-
           <button
             onClick={onClose}
             type="button"
@@ -3075,6 +3094,10 @@ function ThemeEditor({
 
         </div>
 
+
+        {/* =================================================
+            FORM
+        ================================================= */}
 
         <form
           onSubmit={e => {
@@ -3090,7 +3113,6 @@ function ThemeEditor({
               return;
             }
 
-
             if (!form.event_id) {
 
               alert(
@@ -3100,13 +3122,17 @@ function ThemeEditor({
               return;
             }
 
-
             onSave(form);
 
           }}
+
           className="editor-form"
         >
 
+
+          {/* =================================================
+              THEME NAME / EVENT
+          ================================================= */}
 
           <div className="two">
 
@@ -3161,6 +3187,10 @@ function ThemeEditor({
           </div>
 
 
+          {/* =================================================
+              PRICE / TAG
+          ================================================= */}
+
           <div className="two">
 
             <label>
@@ -3204,12 +3234,16 @@ function ThemeEditor({
           </div>
 
 
+          {/* =================================================
+              DESCRIPTION
+          ================================================= */}
+
           <label>
 
             Description
 
             <textarea
-              rows="3"
+              rows="4"
               value={
                 form.description || ''
               }
@@ -3225,28 +3259,29 @@ function ThemeEditor({
           </label>
 
 
+          {/* =================================================
+              INCLUDED ITEMS
+          ================================================= */}
+
           <label>
 
             Included Items
 
-            <input
-              value={
-                (form.includes || [])
-                  .join(', ')
-              }
+            <textarea
+              rows="3"
+              value={includedText}
               onChange={e =>
-                update(
-                  'includes',
+                updateIncludedItems(
                   e.target.value
-                    .split(',')
-                    .map(x =>
-                      x.trim()
-                    )
-                    .filter(Boolean)
                 )
               }
               placeholder="Backdrop, Balloons, Cake table, Lights"
             />
+
+            <small className="field-help">
+              Separate each item with a comma.
+              Example: Backdrop, Balloons, Cake Table, Lights
+            </small>
 
           </label>
 
@@ -3266,8 +3301,7 @@ function ThemeEditor({
               </strong>
 
               <p>
-                Upload multiple JPG,
-                PNG or WEBP images.
+                Select multiple JPG, PNG or WEBP images.
               </p>
 
             </div>
@@ -3296,31 +3330,49 @@ function ThemeEditor({
 
           {allPhotos.length > 0 && (
 
-            <div className="photo-grid">
+            <div className="photo-section">
 
-              {allPhotos.map(
-                (src, index) => (
+              <div className="photo-section-head">
 
-                  <div
-                    className="photo-thumb"
-                    key={`${src}-${index}`}
-                  >
+                <strong>
+                  Theme Photos
+                </strong>
 
-                    <img
-                      src={src}
-                      alt={`Theme photo ${index + 1}`}
-                    />
+                <span>
+                  {allPhotos.length} image
+                  {allPhotos.length !== 1 ? 's' : ''}
+                </span>
 
-                    {index === 0 && (
-                      <span>
-                        Main
-                      </span>
-                    )}
+              </div>
 
-                  </div>
 
-                )
-              )}
+              <div className="photo-grid">
+
+                {allPhotos.map(
+                  (src, index) => (
+
+                    <div
+                      className="photo-thumb"
+                      key={`${src}-${index}`}
+                    >
+
+                      <img
+                        src={src}
+                        alt={`Theme photo ${index + 1}`}
+                      />
+
+                      {index === 0 && (
+                        <span>
+                          Main
+                        </span>
+                      )}
+
+                    </div>
+
+                  )
+                )}
+
+              </div>
 
             </div>
 
@@ -3358,7 +3410,6 @@ function ThemeEditor({
     </div>
   );
 }
-
 /* =========================================================
    ADMIN CUSTOMERS
 ========================================================= */
