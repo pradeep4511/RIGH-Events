@@ -1736,84 +1736,94 @@ function AdminLayout({ children }) {
 
 function ProtectedAdmin({ children }) {
 
-  const [loading, setLoading] =
-    React.useState(
-      supabaseConfigured
-    );
-
-
-  const [ok, setOk] =
-    React.useState(
-      !supabaseConfigured ||
-      sessionStorage.getItem(
-        'righ_demo_admin'
-      ) === '1'
-    );
-
+  const [loading, setLoading] = React.useState(true);
+  const [ok, setOk] = React.useState(false);
 
   React.useEffect(() => {
 
-    if (!supabaseConfigured) {
-      return;
-    }
-
-
     let alive = true;
 
+    async function checkAdmin() {
 
-    supabase.auth
-      .getUser()
-      .then(async ({ data }) => {
-
-        if (!alive) {
-          return;
-        }
-
-
-        if (!data.user) {
-
+      // Supabase must be configured
+      if (!supabaseConfigured || !supabase) {
+        if (alive) {
           setOk(false);
           setLoading(false);
+        }
+        return;
+      }
+
+      try {
+
+        // Get currently logged-in user
+        const {
+          data: { user },
+          error: userError
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+
+          if (alive) {
+            setOk(false);
+            setLoading(false);
+          }
 
           return;
         }
 
-
+        // Check user's profile role
         const {
           data: profile,
-          error
+          error: profileError
         } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', data.user.id)
+          .eq('id', user.id)
           .single();
 
-
-        if (error) {
+        if (profileError) {
 
           console.error(
             'ADMIN PROFILE ERROR:',
-            error
+            profileError
           );
 
+          if (alive) {
+            setOk(false);
+            setLoading(false);
+          }
+
+          return;
         }
 
+        // Only role = admin can access
+        if (alive) {
+          setOk(profile?.role === 'admin');
+          setLoading(false);
+        }
 
-        setOk(
-          profile?.role === 'admin'
+      } catch (error) {
+
+        console.error(
+          'ADMIN AUTH CHECK ERROR:',
+          error
         );
 
-        setLoading(false);
+        if (alive) {
+          setOk(false);
+          setLoading(false);
+        }
+      }
+    }
 
-      });
-
+    checkAdmin();
 
     return () => {
       alive = false;
     };
 
   }, []);
-
 
   if (loading) {
 
@@ -1825,7 +1835,6 @@ function ProtectedAdmin({ children }) {
 
   }
 
-
   if (!ok) {
 
     return (
@@ -1836,7 +1845,6 @@ function ProtectedAdmin({ children }) {
     );
 
   }
-
 
   return children;
 }
