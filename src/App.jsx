@@ -847,7 +847,7 @@ function Themes() {
 function EventThemes(){
 
   const { id } = useParams();
-  const [selectedImage, setSelectedImage] = React.useState(0);
+  
 
   const {
     events,
@@ -953,7 +953,7 @@ function EventThemes(){
 function ThemeDetails(){
 
   const {id} = useParams();
-
+  const [selectedImage, setSelectedImage] = React.useState(0);
   const {
     events,
     themes,
