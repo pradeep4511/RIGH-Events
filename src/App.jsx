@@ -192,16 +192,167 @@ function Footer() {
    CATALOG
 ========================================================= */
 
-function useCatalog() {
+function useCatalog(){
 
-  const [events, setEvents] = React.useState(() =>
-    readLocal('righ_events', defaultEvents)
+  const [events,setEvents] = React.useState(
+    () => readLocal('righ_events', defaultEvents)
   );
 
-  const [themes, setThemes] = React.useState(() =>
-    readLocal('righ_themes', defaultThemes)
+  const [themes,setThemes] = React.useState(
+    () => readLocal('righ_themes', defaultThemes)
   );
 
+  const [loading,setLoading] = React.useState(supabaseConfigured);
+
+  React.useEffect(() => {
+
+    if(!supabaseConfigured){
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadCatalog(){
+
+      try{
+
+        const [
+          eventsResult,
+          themesResult
+        ] = await Promise.all([
+
+          supabase
+            .from('events')
+            .select('*')
+            .eq('active',true)
+            .order('name'),
+
+          supabase
+            .from('themes')
+            .select(`
+              *,
+              theme_images (
+                url,
+                sort_order
+              )
+            `)
+            .eq('active',true)
+            .order('created_at',{ascending:false})
+
+        ]);
+
+        if(cancelled) return;
+
+        if(eventsResult.error){
+          console.error(
+            'Events loading error:',
+            eventsResult.error
+          );
+        }
+
+        if(themesResult.error){
+
+          console.error(
+            'Themes loading error:',
+            themesResult.error
+          );
+
+        }
+
+        if(eventsResult.data){
+
+          setEvents(eventsResult.data);
+
+        }
+
+        if(themesResult.data){
+
+          const formattedThemes =
+            themesResult.data.map(theme => {
+
+              const images =
+                (theme.theme_images || [])
+                  .sort(
+                    (a,b) =>
+                      (a.sort_order || 0) -
+                      (b.sort_order || 0)
+                  )
+                  .map(image => image.url);
+
+              return {
+
+                ...theme,
+
+                image_url:
+                  theme.image_url ||
+                  images[0] ||
+                  '',
+
+                images
+
+              };
+
+            });
+
+          setThemes(formattedThemes);
+
+        }
+
+      } catch(error){
+
+        console.error(
+          'Catalog loading error:',
+          error
+        );
+
+      } finally {
+
+        if(!cancelled){
+          setLoading(false);
+        }
+
+      }
+
+    }
+
+    loadCatalog();
+
+    return () => {
+      cancelled = true;
+    };
+
+  },[]);
+
+
+  React.useEffect(() => {
+
+    if(!supabaseConfigured){
+
+      writeLocal(
+        'righ_events',
+        events
+      );
+
+      writeLocal(
+        'righ_themes',
+        themes
+      );
+
+    }
+
+  },[events,themes]);
+
+
+  return {
+    events,
+    themes,
+    setEvents,
+    setThemes,
+    loading
+  };
+
+}
 
   /* -----------------------------------------
      LOCAL MODE
@@ -859,178 +1010,72 @@ function Themes() {
 /* =========================================================
    EVENT THEMES
 ========================================================= */
+function ThemeDetails(){
 
-function EventThemes() {
-
-  const { id } = useParams();
+  const {id} = useParams();
 
   const {
     events,
-    themes
+    themes,
+    loading
   } = useCatalog();
 
-  const event =
-    events.find(
-      e => e.id === id
-    );
 
-  const list =
-    themes.filter(
-      theme => theme.event_id === id
-    );
+  // Wait for Supabase data
+  // before deciding that the theme doesn't exist.
+  if(loading){
 
-
-  if (!event) {
     return (
-      <Navigate
-        to="/events"
-      />
-    );
-  }
 
+      <>
 
-  return (
-    <>
-      <Header />
+        <Header/>
 
-      <div
-        className="event-hero"
-        style={{
-          backgroundImage:
-            `linear-gradient(
-              90deg,
-              rgba(20,14,20,.72),
-              rgba(20,14,20,.25)
-            ),
-            url(${event.image})`
-        }}
-      >
+        <main className="container">
 
-        <div className="container">
-
-          <Link
-            to="/events"
-            className="back-link"
-          >
-            <ChevronLeft size={16} />
-            All Events
-          </Link>
-
-          <div>
-
-            <span className="event-icon">
-              {event.icon}
-            </span>
-
-            <p className="eyebrow">
-              RIGH EVENTS
-            </p>
-
-            <h1>
-              {event.name} Decorations
-            </h1>
-
-            <p>
-              {list.length} themes available.
-              Choose a style that suits your
-              celebration.
-            </p>
-
+          <div className="loading">
+            Loading theme...
           </div>
 
-        </div>
+        </main>
 
-      </div>
+      </>
 
+    );
 
-      <main className="section container">
-
-        <div className="theme-grid">
-
-          {list.map(theme => (
-            <ThemeCard
-              key={theme.id}
-              t={theme}
-              events={events}
-            />
-          ))}
-
-        </div>
+  }
 
 
-        {!list.length && (
-          <Empty
-            text="No themes have been added for this event yet."
-          />
-        )}
-
-      </main>
-
-      <Footer />
-    </>
-  );
-}
-
-
-/* =========================================================
-   THEME DETAILS
-========================================================= */
-
-function ThemeDetails() {
-
-  const { id } =
-    useParams();
-
-  const {
-    events,
-    themes
-  } = useCatalog();
-
-
-  const theme =
+  const t =
     themes.find(
-      item => String(item.id) === String(id)
+      x => String(x.id) === String(id)
     );
 
 
-  /*
-    Important:
-    If the ID doesn't exist, go back to themes
-    instead of rendering a broken white page.
-  */
+  if(!t){
 
-  if (!theme) {
-
-    return (
-      <Navigate
-        to="/themes"
-        replace
-      />
-    );
+    return <Navigate to="/themes" replace/>;
 
   }
 
 
   const event =
     events.find(
-      e => e.id === theme.event_id
+      e => String(e.id) === String(t.event_id)
     );
 
 
   const gallery = [
-    theme.image_url,
-    ...(theme.images || [])
-  ]
-    .filter(Boolean)
-    .filter(
-      (url, index, array) =>
-        array.indexOf(url) === index
-    );
+    t.image_url,
+    ...(t.images || [])
+  ].filter(Boolean);
 
 
   return (
+
     <>
-      <Header />
+
+      <Header/>
 
       <main className="container detail-page">
 
@@ -1042,70 +1087,67 @@ function ThemeDetails() {
 
           {' / '}
 
-          <Link
-            to={`/events/${event?.id}`}
-          >
+          <Link to={`/events/${event?.id}`}>
             {event?.name}
           </Link>
 
           {' / '}
 
-          {theme.name}
+          {t.name}
 
         </div>
 
 
         <div className="detail-grid">
 
+          {/* PHOTOS */}
+
           <div>
 
-            {gallery.length > 0 ? (
+            <img
+              className="detail-main-img"
+              src={gallery[0]}
+              alt={t.name}
+            />
 
-              <img
-                className="detail-main-img"
-                src={gallery[0]}
-                alt={theme.name}
-              />
 
-            ) : (
+            {gallery.length > 1 && (
 
-              <div className="detail-main-img empty-image">
-                No Image Available
+              <div className="thumbs">
+
+                {gallery
+                  .slice(0,6)
+                  .map((src,i)=>(
+
+                    <img
+                      key={i}
+                      src={src}
+                      alt={`${t.name} ${i+1}`}
+                    />
+
+                  ))
+                }
+
               </div>
 
             )}
 
-
-            <div className="thumbs">
-
-              {gallery
-                .slice(0, 6)
-                .map((src, i) => (
-
-                  <img
-                    key={`${src}-${i}`}
-                    src={src}
-                    alt={`${theme.name} ${i + 1}`}
-                  />
-
-                ))}
-
-            </div>
-
           </div>
 
+
+          {/* DETAILS */}
 
           <div className="detail-copy">
 
             <div className="detail-actions">
 
               <span className="badge">
-                {theme.tag || 'Theme'}
+                {t.tag || 'Theme'}
               </span>
 
               <span>
-                <Heart size={19} />
-                <Share2 size={19} />
+                <Heart size={19}/>
+                <Share2 size={19}/>
               </span>
 
             </div>
@@ -1117,18 +1159,18 @@ function ThemeDetails() {
 
 
             <h1>
-              {theme.name}
+              {t.name}
             </h1>
 
 
             <p className="lead">
-              {theme.description}
+              {t.description || 'Beautifully designed decoration theme for your special event.'}
             </p>
 
 
             <div className="big-price">
 
-              {money(theme.price)}
+              {money(t.price)}
 
               <small>
                 Starting Price
@@ -1144,15 +1186,19 @@ function ThemeDetails() {
 
             <div className="include-grid">
 
-              {(theme.includes || [])
-                .map(item => (
+              {(t.includes || []).map(
+                item => (
 
                   <div key={item}>
-                    <Check size={17} />
+
+                    <Check size={17}/>
+
                     {item}
+
                   </div>
 
-                ))}
+                )
+              )}
 
             </div>
 
@@ -1160,17 +1206,17 @@ function ThemeDetails() {
             <div className="detail-meta">
 
               <span>
-                <Clock3 />
+                <Clock3/>
                 3–4 hours
               </span>
 
               <span>
-                <CalendarDays />
+                <CalendarDays/>
                 Customizable
               </span>
 
               <span>
-                <MapPin />
+                <MapPin/>
                 Indoor / Outdoor
               </span>
 
@@ -1180,14 +1226,15 @@ function ThemeDetails() {
             <div className="actions full">
 
               <Link
-                to={`/enquiry?theme=${theme.id}`}
+                to={`/enquiry?theme=${t.id}`}
                 className="btn btn-primary"
               >
                 Request a Quote
               </Link>
 
+
               <Link
-                to={`/enquiry?theme=${theme.id}`}
+                to={`/enquiry?theme=${t.id}`}
                 className="btn btn-outline"
               >
                 Book This Theme
@@ -1199,11 +1246,16 @@ function ThemeDetails() {
             <a
               className="whatsapp"
               href={`https://wa.me/919999999999?text=${encodeURIComponent(
-                `Hi Righ Events, I am interested in ${theme.name} for ${event?.name}.`
+                `Hi Righ Events, I am interested in ${t.name} for ${event?.name}.`
               )}`}
+              target="_blank"
+              rel="noreferrer"
             >
-              <MessageCircle size={18} />
+
+              <MessageCircle size={18}/>
+
               Chat on WhatsApp
+
             </a>
 
           </div>
@@ -1212,9 +1264,12 @@ function ThemeDetails() {
 
       </main>
 
-      <Footer />
+      <Footer/>
+
     </>
+
   );
+
 }
 
 
