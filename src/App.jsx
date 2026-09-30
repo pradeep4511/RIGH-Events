@@ -77,7 +77,7 @@ function Header({ admin = false }) {
 
   <div>
     Righ Events
-    <small>{admin ? 'Admin Panel' : 'Events & Decorations'}</small>
+    <small>{admin ? 'Admin Panel' : 'WE CREATE YOU CELEBRATE !! '}</small>
   </div>
 </Link>
 
@@ -140,7 +140,7 @@ function Footer() {
 
   <div>
     Righ Events
-    <small>Events & Decorations</small>
+    <small>WE CREATE - YOU CELEBRATE !!</small>
   </div>
 </div>
 
@@ -165,9 +165,6 @@ function Footer() {
             +91 93460 80480
           </a>
 
-          <a href="tel:+918074764852">
-            +91 8074764852
-          </a>
 
           <a href="https://wa.me/919346080480">
             WhatsApp
