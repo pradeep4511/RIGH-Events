@@ -79,7 +79,7 @@ function Header({ admin = false }) {
           <div>
             Righ Events
             <small>
-              {admin ? 'Admin Panel' : 'Events & Decorations'}
+              {admin ? 'Admin Panel' : 'WE CREATE - YOU CELEBRATE !!'}
             </small>
           </div>
         </Link>
@@ -141,7 +141,7 @@ function Footer() {
 
             <div>
               Righ Events
-              <small>Events & Decorations</small>
+              <small>WE CREATE - YOU CELEBRATE !!</small>
             </div>
           </div>
 
@@ -172,6 +172,9 @@ function Footer() {
 
           <a href="https://wa.me/919346080480">
             WhatsApp
+          </a>
+          <a href="https://www.instagram.com/righevents?stkn=YzJ1aW1iZ29vcjJ1">
+            INSTAGRAM
           </a>
 
           <a href="mailto:rgeventdecors@gmail.com">
