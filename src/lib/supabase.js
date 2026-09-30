@@ -4,7 +4,9 @@ const url =
   import.meta.env.VITE_SUPABASE_URL ||
   import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
   '';
-
+console.log("SUPABASE URL:", url);
+console.log("SUPABASE KEY EXISTS:", Boolean(key));
+  
 const key =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
