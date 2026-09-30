@@ -847,6 +847,7 @@ function Themes() {
 function EventThemes(){
 
   const { id } = useParams();
+  const [selectedImage, setSelectedImage] = React.useState(0);
 
   const {
     events,
@@ -1041,35 +1042,37 @@ function ThemeDetails(){
 
           {/* PHOTOS */}
 
-          <div>
+<div>
 
-            <img
-              className="detail-main-img"
-              src={gallery[0]}
-              alt={t.name}
-            />
+  <img
+    className="detail-main-img"
+    src={gallery[selectedImage]}
+    alt={t.name}
+  />
+
+  {gallery.length > 1 && (
+    <div className="thumbs">
+
+      {gallery
+        .slice(0, 6)
+        .map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={`${t.name} ${i + 1}`}
+            onClick={() => setSelectedImage(i)}
+            className={
+              selectedImage === i
+                ? 'active-thumb'
+                : ''
+            }
+          />
+        ))}
+
+    </div>
+  )}
 
 
-            {gallery.length > 1 && (
-
-              <div className="thumbs">
-
-                {gallery
-                  .slice(0,6)
-                  .map((src,i)=>(
-
-                    <img
-                      key={i}
-                      src={src}
-                      alt={`${t.name} ${i+1}`}
-                    />
-
-                  ))
-                }
-
-              </div>
-
-            )}
 
           </div>
 
