@@ -70,21 +70,16 @@ function Header({ admin = false }) {
     <header className={admin ? 'header admin-header' : 'header'}>
       <div className="container nav">
 
-        <Link
-          to={admin ? '/admin' : '/'}
-          className="brand"
-        >
-          <span className="logo">
-          <img src="https://cdn.phototourl.com/member/2026-09-30-1be61a56-3c2a-435f-9487-b369f39726ce.jpg" alt="Righ Events" />
-          </span>
+        <Link to={admin ? '/admin' : '/'} className="brand">
+  <span className="logo">
+    <img src="https://cdn.phototourl.com/member/2026-09-30-1be61a56-3c2a-435f-9487-b369f39726ce.jpg" alt="Righ Events" />
+  </span>
 
-          <div>
-            Righ Events
-            <small>
-              {admin ? 'Admin Panel' : 'WE CREATE - YOU CELEBRATE !!'}
-            </small>
-          </div>
-        </Link>
+  <div>
+    Righ Events
+    <small>{admin ? 'Admin Panel' : 'Events & Decorations'}</small>
+  </div>
+</Link>
 
         <button
           className="mobile-menu"
@@ -139,13 +134,15 @@ function Footer() {
 
         <div>
           <div className="brand">
-            <span>✿</span>
+  <span className="logo">
+    <img src="https://cdn.phototourl.com/member/2026-09-30-1be61a56-3c2a-435f-9487-b369f39726ce.jpg" alt="Righ Events" />
+  </span>
 
-            <div>
-              Righ Events
-              <small>WE CREATE - YOU CELEBRATE !!</small>
-            </div>
-          </div>
+  <div>
+    Righ Events
+    <small>Events & Decorations</small>
+  </div>
+</div>
 
           <p>
             Opposite Post Office, Market street,
