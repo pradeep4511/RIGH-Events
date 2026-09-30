@@ -77,7 +77,7 @@ function Header({ admin = false }) {
 
   <div>
     Righ Events
-    <small>{admin ? 'Admin Panel' : 'WE CREATE YOU CELEBRATE !! '}</small>
+    <small>{admin ? 'Admin Panel' : 'WE CREATE - YOU CELEBRATE !! '}</small>
   </div>
 </Link>
 
