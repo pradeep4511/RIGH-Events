@@ -1147,11 +1147,7 @@ function ThemeDetails(){
 
             <div className="detail-meta">
 
-              <span>
-                <Clock3/>
-                3–4 hours
-              </span>
-
+              
               <span>
                 <CalendarDays/>
                 Customizable
