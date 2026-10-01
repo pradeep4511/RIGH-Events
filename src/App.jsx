@@ -3057,16 +3057,12 @@ function ThemeEditor({
     (form.includes || []).join(', ');
 
 
-  const updateIncludedItems = (value) => {
-
-    const items = value
-      .split(',')
-      .map(item => item.trim())
-      .filter(Boolean);
-
-    update('includes', items);
-
-  };
+ const updateIncludedItems = (value) => {
+  setForm(prev => ({
+    ...prev,
+    includes: value.split(',').map(item => item.trim())
+  }));
+};
 
 
   return (
@@ -3274,27 +3270,21 @@ function ThemeEditor({
               INCLUDED ITEMS
           ================================================= */}
 
-          <label>
+  <label>
+  Included Items
 
-            Included Items
+  <textarea
+    rows="3"
+    value={(form.includes || []).join(', ')}
+    onChange={(e) => updateIncludedItems(e.target.value)}
+    placeholder="Backdrop, Balloons, Cake table, Lights"
+  />
 
-            <textarea
-              rows="3"
-              value={includedText}
-              onChange={e =>
-                updateIncludedItems(
-                  e.target.value
-                )
-              }
-              placeholder="Backdrop, Balloons, Cake table, Lights"
-            />
-
-            <small className="field-help">
-              Separate each item with a comma.
-              Example: Backdrop, Balloons, Cake Table, Lights
-            </small>
-
-          </label>
+  <small className="field-help">
+    Separate each item with a comma.
+    Example: Backdrop, Balloons, Cake Table, Lights
+  </small>
+</label>
 
 
           {/* =================================================
