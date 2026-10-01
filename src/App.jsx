@@ -1187,7 +1187,7 @@ function ThemeDetails(){
 
             <a
               className="whatsapp"
-              href={`https://wa.me/919999999999?text=${encodeURIComponent(
+              href={`https://wa.me/919346080480?text=${encodeURIComponent(
                 `Hi Righ Events, I am interested in ${t.name} for ${event?.name}.`
               )}`}
               target="_blank"
