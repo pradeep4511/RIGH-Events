@@ -144,11 +144,11 @@ function Footer() {
   </div>
 </div>
 
-          <p>
+          <a href="https://maps.google.com/?q=Opposite+Post+Office,+Market+street,+Akkpedianera,+Dharmavaram,+Andhra+Pradesh+515671,+India." target="_blank" rel="noopener noreferrer">
             Opposite Post Office, Market street,
             Akkpedianera, Dharmavaram,
             Andhra Pradesh 515671, India.
-          </p>
+          </a>
         </div>
 
         <div>
