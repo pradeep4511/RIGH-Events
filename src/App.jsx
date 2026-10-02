@@ -144,11 +144,12 @@ function Footer() {
   </div>
 </div>
 
-          <a href="https://www.google.com/maps/place/RiGh+Events/@14.4122535,77.7229417,67m/data=!3m1!1e3!4m14!1m7!3m6!1s0x3bb14adefe22d727:0x84788f626beea09d!2sDharmavaram+Head+Post+Office!8m2!3d14.4122152!4d77.7229378!16s%2Fg%2F11bcf0xw5x!3m5!1s0x3bb14390b1155f9d:0x6d40e4610a756f09!8m2!3d14.4120124!4d77.7230777!16s%2Fg%2F11s5k0dh6v?entry=ttu&g_ep=EgoyMDI2MDkzMC4wIKXMDSoASAFQAw%3D%3D">
+         <h3> <a href="https://www.google.com/maps/place/RiGh+Events/@14.4122535,77.7229417,67m/data=!3m1!1e3!4m14!1m7!3m6!1s0x3bb14adefe22d727:0x84788f626beea09d!2sDharmavaram+Head+Post+Office!8m2!3d14.4122152!4d77.7229378!16s%2Fg%2F11bcf0xw5x!3m5!1s0x3bb14390b1155f9d:0x6d40e4610a756f09!8m2!3d14.4120124!4d77.7230777!16s%2Fg%2F11s5k0dh6v?entry=ttu&g_ep=EgoyMDI2MDkzMC4wIKXMDSoASAFQAw%3D%3D">
            RIGH EVENTS, Opposite Post Office, Market street,
             Akkpedianera, Dharmavaram,
             Andhra Pradesh 515671, India.
           </a>
+          </h3>
         </div>
 
         <div>
