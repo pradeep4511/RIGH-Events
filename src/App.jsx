@@ -233,7 +233,7 @@ function useCatalog(){
             .from('events')
             .select('*')
             .eq('active',true)
-            .order('name'),
+            .order('sort_order', { ascending: true }),
 
           supabase
             .from('themes')
