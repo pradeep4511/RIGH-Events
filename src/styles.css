@@ -1507,3 +1507,20 @@ footer{
 .success p{
   color:#777
 }
+
+.location-address {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.location-address a {
+  text-decoration: none;
+  color: inherit;
+}
