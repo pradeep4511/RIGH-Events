@@ -701,14 +701,30 @@ function Events() {
 
         <div className="event-grid large">
 
-          {events.map(event => (
-            <EventCard
-              key={event.id}
-              e={event}
-            />
-          ))}
+  {[
+    ...events.filter(e =>
+      e.name.toLowerCase() === 'birthday'
+    ),
 
-        </div>
+    ...events.filter(e =>
+      ['wedding', 'marriage'].includes(
+        e.name.toLowerCase()
+      )
+    ),
+
+    ...events.filter(e =>
+      !['birthday', 'wedding', 'marriage'].includes(
+        e.name.toLowerCase()
+      )
+    )
+  ].map(event => (
+    <EventCard
+      key={event.id}
+      e={event}
+    />
+  ))}
+
+</div>
 
       </main>
 
