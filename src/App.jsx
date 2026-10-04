@@ -2176,51 +2176,45 @@ function AdminDashboard() {
         </div>
 
 
-        <div className="panel">
+      <div className="panel">
 
-          <h3>
-            Recent Enquiries
-          </h3>
+  <h3>
+    Recent Enquiries
+  </h3>
 
-          {enquiries
-            .slice(0, 5)
-            .map(item => (
+  {enquiries
+    .slice(0, 5)
+    .map(item => (
 
-              <div
-                className="enquiry-row"
-                key={item.id}
-              >
+      <div
+        className="enquiry-row"
+        key={item.id}
+      >
 
-                <strong>
-                  {item.name}
-                </strong>
+        <strong>
+          {item.name}
+        </strong>
 
-                <span>
-                  {item.event || '—'}
-                </span>
+        <span>
+          {item.event_name || '—'}
+        </span>
 
-                <b>
-                  {item.status}
-                </b>
-
-              </div>
-
-            ))}
-
-
-          {!enquiries.length && (
-            <Empty
-              text="No enquiries yet."
-            />
-          )}
-
-        </div>
+        <b>
+          {item.status}
+        </b>
 
       </div>
 
-    </AdminLayout>
-  );
-}
+    ))}
+
+  {!enquiries.length && (
+    <Empty
+      text="No enquiries yet."
+    />
+  )}
+
+</div>
+      
 
 
 /* =========================================================
