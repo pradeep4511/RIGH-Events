@@ -3453,19 +3453,19 @@ function AdminCustomers() {
         );
       }
 
-      const {
-        data,
-        error: fetchError
-      } = await supabase
-        .from('enquiries')
-        .select('*')
-        .order('created_at', {
-          ascending: false
-        });
+  const { data, error } = await supabase
+  .from('enquiries')
+  .select(`
+    *,
+    themes (
+      name
+    )
+  `)
+  .order('created_at', { ascending: false });
 
-      if (fetchError) {
-        throw fetchError;
-      }
+if (error) {
+  throw error;
+}
 
       /*
        * Build unique customers.
