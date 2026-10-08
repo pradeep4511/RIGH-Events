@@ -3464,9 +3464,9 @@ function AdminCustomers() {
   .order('created_at', { ascending: false });
 
 if (error) {
+  console.error('Enquiries error:', error);
   throw error;
 }
-
       /*
        * Build unique customers.
        *
