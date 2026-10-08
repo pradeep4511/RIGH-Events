@@ -3453,20 +3453,37 @@ function AdminCustomers() {
         );
       }
 
-const { data, error } = await supabase
+const { data: enquiryData, error: enquiryError } = await supabase
   .from('enquiries')
-  .select(`
-    *,
-    themes (
-      title
-    )
-  `)
+  .select('*')
   .order('created_at', { ascending: false });
 
-if (error) {
-  console.error('Error fetching enquiries:', error);
-  throw error;
+if (enquiryError) {
+  throw enquiryError;
 }
+
+const { data: themeData, error: themeError } = await supabase
+  .from('themes')
+  .select('id, name');
+
+if (themeError) {
+  throw themeError;
+}
+
+const themeMap = {};
+
+themeData.forEach(theme => {
+  themeMap[theme.id] = theme.name;
+});
+
+const enquiriesWithTheme = enquiryData.map(enquiry => ({
+  ...enquiry,
+  theme_name: enquiry.theme_id
+    ? themeMap[enquiry.theme_id] || '—'
+    : '—'
+}));
+
+setEnquiries(enquiriesWithTheme);
       /*
        * Build unique customers.
        *
@@ -3925,9 +3942,9 @@ function AdminEnquiries() {
 
                   
                   <td>
-                     {item.themes?.title || '—'}
+                    {item.theme_name || '—'}
                   </td>
-                  
+
                   <td>
                     {item.event_date || '—'}
                   </td>
