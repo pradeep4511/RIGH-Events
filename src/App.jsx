@@ -3453,18 +3453,18 @@ function AdminCustomers() {
         );
       }
 
-  const { data, error } = await supabase
+const { data, error } = await supabase
   .from('enquiries')
   .select(`
     *,
     themes (
-      name
+      title
     )
   `)
   .order('created_at', { ascending: false });
 
 if (error) {
-  console.error('Enquiries error:', error);
+  console.error('Error fetching enquiries:', error);
   throw error;
 }
       /*
@@ -3926,7 +3926,9 @@ function AdminEnquiries() {
                   <td>
                     {item.themes?.name || '—'}
                   </td>
-
+                  <td>
+                     {item.themes?.title || '—'}
+                  </td>
                   <td>
                     {item.event_date || '—'}
                   </td>
