@@ -3453,37 +3453,51 @@ function AdminCustomers() {
         );
       }
 
-const { data: enquiryData, error: enquiryError } = await supabase
-  .from('enquiries')
-  .select('*')
-  .order('created_at', { ascending: false });
+const fetchEnquiries = async () => {
+  const { data: enquiries, error: enquiryError } = await supabase
+    .from('enquiries')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-if (enquiryError) {
-  throw enquiryError;
-}
+  if (enquiryError) {
+    console.error('ENQUIRY ERROR:', enquiryError);
+    return;
+  }
 
-const { data: themeData, error: themeError } = await supabase
-  .from('themes')
-  .select('id, name');
+  const { data: themes, error: themeError } = await supabase
+    .from('themes')
+    .select('id, name');
 
-if (themeError) {
-  throw themeError;
-}
+  if (themeError) {
+    console.error('THEME ERROR:', themeError);
+    return;
+  }
 
-const themeMap = {};
+  console.log('ENQUIRIES:', enquiries);
+  console.log('THEMES:', themes);
 
-themeData.forEach(theme => {
-  themeMap[theme.id] = theme.name;
-});
+  const updatedEnquiries = enquiries.map(enquiry => {
+    const matchingTheme = themes.find(
+      theme => theme.id === enquiry.theme_id
+    );
 
-const enquiriesWithTheme = enquiryData.map(enquiry => ({
-  ...enquiry,
-  theme_name: enquiry.theme_id
-    ? themeMap[enquiry.theme_id] || '—'
-    : '—'
-}));
+    console.log(
+      'Theme ID:',
+      enquiry.theme_id,
+      'Matched:',
+      matchingTheme
+    );
 
-setEnquiries(enquiriesWithTheme);
+    return {
+      ...enquiry,
+      theme_name: matchingTheme ? matchingTheme.name : '—'
+    };
+  });
+
+  console.log('FINAL DATA:', updatedEnquiries);
+
+  setEnquiries(updatedEnquiries);
+};
       /*
        * Build unique customers.
        *
@@ -3942,8 +3956,9 @@ function AdminEnquiries() {
 
                   
                   <td>
-                    {item.theme_name || '—'}
+                    {item.theme_name}
                   </td>
+                  
 
                   <td>
                     {item.event_date || '—'}
