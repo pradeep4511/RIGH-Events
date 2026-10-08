@@ -3923,12 +3923,11 @@ function AdminEnquiries() {
                     {item.event_id || '—'}
                   </td>
 
-                  <td>
-                    {item.themes?.name || '—'}
-                  </td>
+                  
                   <td>
                      {item.themes?.title || '—'}
                   </td>
+                  
                   <td>
                     {item.event_date || '—'}
                   </td>
