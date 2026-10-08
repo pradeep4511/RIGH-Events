@@ -3924,7 +3924,7 @@ function AdminEnquiries() {
                   </td>
 
                  <td>
-                  {item.themes?.name || '—'}
+                  {item.theme || '—'}
                  </td>
 
                   <td>
