@@ -3453,51 +3453,7 @@ function AdminCustomers() {
         );
       }
 
-const fetchEnquiries = async () => {
-  const { data: enquiries, error: enquiryError } = await supabase
-    .from('enquiries')
-    .select('*')
-    .order('created_at', { ascending: false });
 
-  if (enquiryError) {
-    console.error('ENQUIRY ERROR:', enquiryError);
-    return;
-  }
-
-  const { data: themes, error: themeError } = await supabase
-    .from('themes')
-    .select('id, name');
-
-  if (themeError) {
-    console.error('THEME ERROR:', themeError);
-    return;
-  }
-
-  console.log('ENQUIRIES:', enquiries);
-  console.log('THEMES:', themes);
-
-  const updatedEnquiries = enquiries.map(enquiry => {
-    const matchingTheme = themes.find(
-      theme => theme.id === enquiry.theme_id
-    );
-
-    console.log(
-      'Theme ID:',
-      enquiry.theme_id,
-      'Matched:',
-      matchingTheme
-    );
-
-    return {
-      ...enquiry,
-      theme_name: matchingTheme ? matchingTheme.name : '—'
-    };
-  });
-
-  console.log('FINAL DATA:', updatedEnquiries);
-
-  setEnquiries(updatedEnquiries);
-};
       /*
        * Build unique customers.
        *
@@ -3724,54 +3680,85 @@ function AdminEnquiries() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
 
-  async function loadEnquiries() {
+ async function loadEnquiries() {
 
-    setLoading(true);
-    setError('');
+  setLoading(true);
+  setError('');
 
-    try {
+  try {
 
-      if (!supabaseConfigured) {
-        throw new Error(
-          'Supabase is not configured.'
-        );
-      }
-
-      const {
-        data,
-        error: fetchError
-      } = await supabase
-        .from('enquiries')
-        .select('*')
-        .order('created_at', {
-          ascending: false
-        });
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setItems(data || []);
-
-    } catch (err) {
-
-      console.error(
-        'ENQUIRIES LOAD ERROR:',
-        err
-      );
-
-      setError(
-        err.message ||
-        'Could not load enquiries.'
-      );
-
-    } finally {
-
-      setLoading(false);
-
+    if (!supabaseConfigured) {
+      throw new Error('Supabase is not configured.');
     }
 
+    // Get enquiries
+    const {
+      data: enquiryData,
+      error: enquiryError
+    } = await supabase
+      .from('enquiries')
+      .select('*')
+      .order('created_at', {
+        ascending: false
+      });
+
+    if (enquiryError) {
+      throw enquiryError;
+    }
+
+
+    // Get theme names
+    const {
+      data: themeData,
+      error: themeError
+    } = await supabase
+      .from('themes')
+      .select('id, name');
+
+    if (themeError) {
+      throw themeError;
+    }
+
+
+    // Add theme name to each enquiry
+    const finalData = (enquiryData || []).map(enquiry => {
+
+      const matchingTheme = (themeData || []).find(
+        theme =>
+          String(theme.id) === String(enquiry.theme_id)
+      );
+
+      return {
+        ...enquiry,
+        theme_name: matchingTheme?.name || '—'
+      };
+
+    });
+
+
+    console.log('FINAL ENQUIRIES:', finalData);
+
+    setItems(finalData);
+
+  } catch (err) {
+
+    console.error(
+      'ENQUIRIES LOAD ERROR:',
+      err
+    );
+
+    setError(
+      err.message ||
+      'Could not load enquiries.'
+    );
+
+  } finally {
+
+    setLoading(false);
+
   }
+
+}
 
   React.useEffect(() => {
     loadEnquiries();
